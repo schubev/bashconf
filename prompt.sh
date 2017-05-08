@@ -64,7 +64,7 @@ function build_prompt {
 	prompt+="$(pwd | sed "s/$(sed 's/\//\\\//g' <<< "$HOME" | tr -d '\n')/~/")"
 
 	# Mails
-	mail_count_file=/tmp/user-tmp-schube/mail_count
+	mail_count_file=/tmp/user-tmp-${USER}/mail_count
 	if [ -r "$mail_count_file" ]
 	then
 		mail_count=$(cat $mail_count_file)
