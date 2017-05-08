@@ -36,7 +36,7 @@ else
 	BOX_END="╴"
 fi
 
-function draw_prompt {
+function build_prompt {
 	cmd_error="$?"
 	cwd_color=$CWD_ERROR
 	if [ "$cmd_error" != 0 ]
@@ -48,32 +48,45 @@ function draw_prompt {
 		host_color=$HOST_COLOR
 	fi
 
+	prompt='\[\033[0m\]'
 	# User and hostname
-	echo -ne "\033[${main_color}m┬┤\033[1m "
-	echo -n "$(whoami)"
-	echo -ne "\033[${host_color}m@"
-	echo -n "$(hostname)"
-	echo -ne "\033[${main_color}m"
+	prompt+="\[\033[${main_color}m\]┬┤\[\033[1m\] "
+	prompt+="$(whoami)"
+	prompt+="\[\033[${host_color}m\]@"
+	prompt+="$(hostname)"
 
 	# Time
-	echo -ne " \033[0;${main_color}m│ \033[1;${main_color}m"
-	echo -n "$(date '+%H:%M:%S')"
+	prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;${main_color}m\]"
+	prompt+="$(date '+%H:%M:%S')"
 
 	# Current working directory
-	echo -ne " \033[0;${main_color}m│ \033[1;${cwd_color}m"
-	echo -n "$(pwd | sed "s/$(sed 's/\//\\\//g' <<< "$HOME" | tr -d '\n')/~/")"
+	prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;${cwd_color}m\]"
+	prompt+="$(pwd | sed "s/$(sed 's/\//\\\//g' <<< "$HOME" | tr -d '\n')/~/")"
+
+	# Mails
+	mail_count_file=/tmp/user-tmp-schube/mail_count
+	if [ -r "$mail_count_file" ]
+	then
+		mail_count=$(cat $mail_count_file)
+		if [ "$mail_count" != 0 ]
+		then
+			prompt+=" \[\033[0;${main_color}m\]│ \[\033[1m\]${mail_count}M"
+		fi
+	fi
 
 	# Error status code
 	if [ $cmd_error != 0 ]
 	then
-		echo -ne " \033[0;${main_color}m│ \033[1m#${cmd_error}"
+		prompt+=" \[\033[0;${main_color}m\]│ \[\033[1m\]#${cmd_error}"
 	fi
 
 	# Closing separator
-	echo -e " \033[0;${main_color}m├${BOX_END}"
+	prompt+=" \[\033[0;${main_color}m\]├${BOX_END}"
 
 	# Bottom prompt
-	echo -ne "\033[0;${main_color}m└${BOX_END}\033[0m"
+	prompt+="\n\[\033[0;${main_color}m\]└${BOX_END}\[\033[0m\]"
+	export PS1="$prompt"
 }
-export PS1='\033[0m$(draw_prompt)\033[0m'
+
+export PROMPT_COMMAND=build_prompt
 export PS2='─╴'
