@@ -81,7 +81,7 @@ function error_part {
 }
 
 function user_part {
-	echo $(whoami)'\[\033[${host_color}m\]@'$(hostname)
+	echo $(whoami)'\[\033[${host_color}m\]@'$(hostname -s)
 }
 
 function git_part {
