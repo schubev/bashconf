@@ -86,9 +86,15 @@ function user_part {
 
 function git_part {
 	branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+	changes=$(git status --porcelain | wc -l)
 	if [ -n "$branch" ]
 	then
-		echo "*$branch"
+		if [ "$changes" -gt 0 ]
+		then
+			echo "\[\033[${YELLOW}m*${branch}"
+		else
+			echo "*${branch}"
+		fi
 	fi
 }
 
