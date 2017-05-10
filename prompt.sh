@@ -36,9 +36,66 @@ else
 	BOX_END="╴"
 fi
 
+function prompt_part {
+	builder="$1"
+	color="$2"
+
+	content="$($builder $color)"
+	if [ -n "$content" ]
+	then
+		if [ "$prompt_part_count" == 0 ]
+		then
+			prompt+="\[\033[0;${main_color}m\]┬┤ \[\033[1;${color}m\]${content}"
+		else
+			prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;${color}m\]${content}"
+		fi
+		prompt_part_count=$((prompt_part_count + 1))
+	fi
+}
+
+function cwd_part {
+	pwd | sed "s/$(sed 's/\//\\\//g' <<< "$HOME" | tr -d '\n')/~/"
+}
+
+function date_part {
+	date +%H:%M:%S
+}
+
+function mail_part {
+	mail_count_file=/tmp/user-tmp-${USER}/mail_count
+	if [ -r "$mail_count_file" ]
+	then
+		mail_count=$(cat $mail_count_file)
+		if [ "$mail_count" != 0 ]
+		then
+			echo "${mail_count}M"
+		fi
+	fi
+}
+
+function error_part {
+	if [ $cmd_error != 0 ]
+	then
+		echo "#${cmd_error}"
+	fi
+}
+
+function user_part {
+	echo $(whoami)'\[\033[${host_color}m\]@'$(hostname)
+}
+
+function git_part {
+	branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+	if [ -n "$branch" ]
+	then
+		echo "*$branch"
+	fi
+}
+
 function build_prompt {
 	cmd_error="$?"
 	cwd_color=$CWD_ERROR
+	prompt_part_count=0
 	if [ "$cmd_error" != 0 ]
 	then
 		main_color=$RED
@@ -48,37 +105,14 @@ function build_prompt {
 		host_color=$HOST_COLOR
 	fi
 
-	prompt='\[\033[0m\]'
-	# User and hostname
-	prompt+="\[\033[${main_color}m\]┬┤\[\033[1m\] "
-	prompt+="$(whoami)"
-	prompt+="\[\033[${host_color}m\]@"
-	prompt+="$(hostname)"
+	prompt='\[\033[0;37m\]¬'"$(printf "%$((COLUMNS - 1))s" '')"'\r'
 
-	# Time
-	prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;${main_color}m\]"
-	prompt+="$(date '+%H:%M:%S')"
-
-	# Current working directory
-	prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;${cwd_color}m\]"
-	prompt+="$(pwd | sed "s/$(sed 's/\//\\\//g' <<< "$HOME" | tr -d '\n')/~/")"
-
-	# Mails
-	mail_count_file=/tmp/user-tmp-${USER}/mail_count
-	if [ -r "$mail_count_file" ]
-	then
-		mail_count=$(cat $mail_count_file)
-		if [ "$mail_count" != 0 ]
-		then
-			prompt+=" \[\033[0;${main_color}m\]│ \[\033[1m\]${mail_count}M"
-		fi
-	fi
-
-	# Error status code
-	if [ $cmd_error != 0 ]
-	then
-		prompt+=" \[\033[0;${main_color}m\]│ \[\033[1m\]#${cmd_error}"
-	fi
+	prompt_part user_part $main_color
+	prompt_part date_part $main_color
+	prompt_part cwd_part $PURPLE
+	prompt_part mail_part $main_color
+	prompt_part git_part $main_color
+	prompt_part error_part $RED
 
 	# Closing separator
 	prompt+=" \[\033[0;${main_color}m\]├${BOX_END}"
