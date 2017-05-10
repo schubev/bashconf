@@ -86,7 +86,7 @@ function user_part {
 
 function git_part {
 	branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-	changes=$(git status --porcelain | wc -l)
+	changes=$(git status --porcelain 2>/dev/null | wc -l)
 	if [ -n "$branch" ]
 	then
 		if [ "$changes" -gt 0 ]
