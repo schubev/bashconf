@@ -61,6 +61,7 @@ function date_part {
 	date +%H:%M:%S
 }
 
+# Specific to my (schubev) own (hackish) setup
 function mail_part {
 	mail_count_file=/tmp/user-tmp-${USER}/mail_count
 	if [ -r "$mail_count_file" ]
@@ -130,3 +131,5 @@ function build_prompt {
 
 export PROMPT_COMMAND=build_prompt
 export PS2='─╴'
+
+# TODO: Make color escapes easier to deal with

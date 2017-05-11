@@ -2,5 +2,5 @@
 
 bashconf=~/.scripts/bashconf
 
-source $bashconf/prompt.sh
 source $bashconf/aliases.sh
+source $bashconf/prompt.sh
