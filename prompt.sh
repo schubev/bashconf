@@ -99,8 +99,18 @@ function git_part {
 	fi
 }
 
+PROMPT_SHOW_DURATION_THRESHOLD=500
+PROMPT_NOTY_DURATION_THRESHOLD=1000
+PROMPT_WARN_DURATION_THRESHOLD=2000
+function duration_part {
+	if [[ "$LAST_CMD_DURATION" -ge "$PROMPT_SHOW_DURATION_THRESHOLD" ]]
+	then
+		echo ${LAST_CMD_DURATION}ms
+	fi
+}
+
 function build_prompt {
-	cmd_error="$?"
+	cmd_error=$LAST_CMD_STATUS
 	cwd_color=$CWD_ERROR
 	prompt_part_count=0
 	if [ "$cmd_error" != 0 ]
@@ -120,6 +130,7 @@ function build_prompt {
 	prompt_part mail_part $main_color
 	prompt_part git_part $main_color
 	prompt_part error_part $RED
+	prompt_part duration_part $main_color
 
 	# Closing separator
 	prompt+=" \[\033[0;${main_color}m\]├${BOX_END}"
@@ -129,7 +140,43 @@ function build_prompt {
 	export PS1="$prompt"
 }
 
-export PROMPT_COMMAND=build_prompt
+function millitime {
+	echo $(( $(date '+%s%N') / 1000000 ))
+}
+
+function on_prompt {
+	LAST_CMD_STATUS=$?
+	on_command_end
+	build_prompt
+	LAST_PROMPT_TOKEN=$(( LAST_PROMPT_TOKEN + 1))
+}
+
+LAST_CMD_START=$(millitime)
+function on_command_end {
+	if [[ "$LAST_PROMPT_TOKEN" == "$LAST_CMD_TOKEN" ]]
+	then
+		LAST_CMD_END=$(millitime)
+		LAST_CMD_DURATION=$(( LAST_CMD_END - LAST_CMD_START ))
+	fi
+}
+
+function on_command {
+	LAST_CMD_RUN="$1"
+	LAST_CMD_TOKEN="$LAST_PROMPT_TOKEN"
+	LAST_CMD_START=$(millitime)
+}
+
+function on_debug {
+	if [[ "$BASH_COMMAND" != "$PROMPT_COMMAND" ]]
+	then
+		LAST_CMD="$BASH_COMMAND"
+		on_command "$BASH_COMMAND"
+	fi
+}
+
+export PROMPT_COMMAND=on_prompt
 export PS2='─╴'
+
+trap on_debug DEBUG
 
 # TODO: Make color escapes easier to deal with
