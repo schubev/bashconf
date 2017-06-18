@@ -31,7 +31,7 @@ fi
 
 if [ "$TERM" == linux ]
 then
-	BOX_END=" "
+	BOX_END="─ "
 else
 	BOX_END="╴"
 fi
@@ -175,7 +175,9 @@ function on_debug {
 }
 
 export PROMPT_COMMAND=on_prompt
-export PS2='─╴'
+export PS2="─${BOX_END}"
+export PS3="?${BOX_END}"
+export PS4="+${BOX_END}"
 
 trap on_debug DEBUG
 
