@@ -29,7 +29,7 @@ else
 	HOST_COLOR=$MAIN_COLOR
 fi
 
-if [ "$TERM" == linux ]
+if [ "$TERM" == linux -o "$TERM" = screen -o "$TERM" = screen-256color ]
 then
 	BOX_END="─ "
 else
@@ -153,17 +153,42 @@ function on_prompt {
 
 LAST_CMD_START=$(millitime)
 function on_command_end {
+	set_term_title "$PWD"
 	if [[ "$LAST_PROMPT_TOKEN" == "$LAST_CMD_TOKEN" ]]
 	then
 		LAST_CMD_END=$(millitime)
 		LAST_CMD_DURATION=$(( LAST_CMD_END - LAST_CMD_START ))
+		if [[ "$LAST_CMD_DURATION" -ge 10000 ]]
+		then
+			if [[ "$LAST_CMD_STATUS" != 0 ]]
+			then
+				notify_urgency=critical
+			else
+				notify_urgency=normal
+			fi
+			notify-send \
+				-u $notify_urgency \
+				-t 20000 \
+				"Command terminated with status $LAST_CMD_STATUS" \
+				"$LAST_CMD_RUN"
+		fi
 	fi
+}
+
+function set_term_title {
+	local title="$1"
+	case $TERM in
+		st|st-*)
+			echo -ne "\x1b]0;${title}\x07"
+			;;
+	esac
 }
 
 function on_command {
 	LAST_CMD_RUN="$1"
 	LAST_CMD_TOKEN="$LAST_PROMPT_TOKEN"
 	LAST_CMD_START=$(millitime)
+	set_term_title "${LAST_CMD_RUN}"
 }
 
 function on_debug {
