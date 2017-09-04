@@ -1,0 +1,3 @@
+#!/bin/bash
+
+lynx -cookies 'https://duckduckgo.com/lite?q='$(echo "$@" | urlencode)
