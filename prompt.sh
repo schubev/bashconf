@@ -14,6 +14,13 @@ ROOT_COLOR=$YELLOW
 SSH_COLOR=$CYAN
 NORMAL_COLOR=$GREEN
 CWD_ERROR=$PURPLE
+#NOTIFY_PGM=notify-send
+NOTIFY_PGM=true
+
+function bright {
+	color="$1"
+	echo $((color + 60))
+}
 
 if [ "$(id -u)" == "0" ]
 then
@@ -45,9 +52,9 @@ function prompt_part {
 	then
 		if [ "$prompt_part_count" == 0 ]
 		then
-			prompt+="\[\033[0;${main_color}m\]┬┤ \[\033[1;${color}m\]${content}"
+			prompt+="\[\033[0;${main_color}m\]┬┤ \[\033[1;$(bright $color)m\]${content}"
 		else
-			prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;${color}m\]${content}"
+			prompt+=" \[\033[0;${main_color}m\]│ \[\033[1;$(bright $color)m\]${content}"
 		fi
 		prompt_part_count=$((prompt_part_count + 1))
 	fi
@@ -63,14 +70,10 @@ function date_part {
 
 # Specific to my (schubev) own (hackish) setup
 function mail_part {
-	mail_count_file=/tmp/user-tmp-${USER}/mail_count
-	if [ -r "$mail_count_file" ]
+	mail_count=$(~/.scripts/newmail.sh)
+	if [[ "$mail_count" -gt 0 ]]
 	then
-		mail_count=$(cat $mail_count_file)
-		if [ "$mail_count" != 0 ]
-		then
-			echo "${mail_count}M"
-		fi
+		echo "${mail_count}M"
 	fi
 }
 
@@ -82,7 +85,7 @@ function error_part {
 }
 
 function user_part {
-	echo $(whoami)'\[\033[${host_color}m\]@'$(hostname -s)
+	echo $(whoami)'\[\033['"$(bright $host_color)"'m\]@'$(hostname -s)
 }
 
 function git_part {
@@ -92,7 +95,7 @@ function git_part {
 	then
 		if [ "$changes" -gt 0 ]
 		then
-			echo "\[\033[${YELLOW}m*${branch}"
+			echo "\[\033[$(bright $YELLOW)m*${branch}"
 		else
 			echo "*${branch}"
 		fi
@@ -107,6 +110,10 @@ function duration_part {
 	then
 		echo ${LAST_CMD_DURATION}ms
 	fi
+}
+
+function hs_part {
+	hs --what=compact | tr -d ' '
 }
 
 function build_prompt {
@@ -131,6 +138,7 @@ function build_prompt {
 	prompt_part git_part $main_color
 	prompt_part error_part $RED
 	prompt_part duration_part $main_color
+	prompt_part hs_part $main_color
 
 	# Closing separator
 	prompt+=" \[\033[0;${main_color}m\]├${BOX_END}"
@@ -166,7 +174,7 @@ function on_command_end {
 			else
 				notify_urgency=normal
 			fi
-			notify-send \
+			$NOTIFY_PGM \
 				-u $notify_urgency \
 				-t 20000 \
 				"Command terminated with status $LAST_CMD_STATUS" \

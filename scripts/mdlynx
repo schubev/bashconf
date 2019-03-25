@@ -1,0 +1,12 @@
+#!/bin/bash
+
+for markdown_pgm in markdown{,_py}
+do
+	if which $markdown_pgm >/dev/null
+	then
+		break
+	fi
+done
+
+src="$1"
+$markdown_pgm "$1" | lynx --stdin
