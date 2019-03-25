@@ -1,0 +1,103 @@
+#!/bin/bash
+# Tact is a custom address book management script. It stores each contact in
+# its own file within a Git repository, à la GNU Pass. For each contact file,
+# the first line shall be the contact’s name. Phone numbers, email addresses
+# and birthdates are recognized by their format. Phone numbers must be
+# formatted as E.164 and birthdates as ISO 8601 dates.
+#
+# Example contact file:
+#
+# John Doe
+# +33798122334
+# john.doe@gmail.com
+# 1988-02-14
+#
+# TODO:
+# - support names with more than just a first and last name
+# - support multiple email addresses and phone numbers
+# - lots of other stuff
+
+set -e
+
+CONTACTS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/tact"
+mkdir -p "$CONTACTS_DIR"
+
+cmd-usage() {
+	1>&2 echo usage
+}
+
+cmd-add() {
+	cd "$CONTACTS_DIR"
+	git init
+	echo "$*" > "$*"
+	"${EDITOR:-vi}" "$*"
+	git add "$*"
+	git commit -m "add $*"
+}
+
+cmd-edit() {
+	cd "$CONTACTS_DIR"
+	"${EDITOR:-vi}" "$*"
+	git add "$*"
+	git commit -m "edit $*"
+}
+
+format-column() {
+	local contact="$1"
+	local phone_number=.
+	local email_address=.
+	local birthdate=.
+	{
+		read contact_name
+		while read contact_line
+		do
+			case "$contact_line" in
+				+*)
+					local phone_number="$contact_line"
+					;;
+				*@*)
+					local email_address="$contact_line"
+					;;
+				??-??|????-??-??)
+					local birthdate="$contact_line"
+					;;
+			esac
+		done
+		echo "$contact_name $phone_number $email_address $birthdate"
+	} < "$contact"
+}
+
+cmd-list() {
+	cd "$CONTACTS_DIR"
+	for contact in *
+	do
+		format-column "$contact"
+	done | sort -k 2 | column -t
+}
+
+cmd-get() {
+	cmd-list | grep -i "$*" | column -t
+}
+
+main() {
+	cmd="$1"
+	shift
+	case "$cmd" in
+		add)
+			cmd-add "$@"
+			;;
+		list)
+			cmd-list "$@"
+			;;
+		edit)
+			cmd-edit "$@"
+			;;
+		get)
+			cmd-get "$@"
+			;;
+		*)
+			cmd-usage
+	esac
+}
+
+main "$@"
