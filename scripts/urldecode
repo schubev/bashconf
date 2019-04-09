@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec perl -M'URI::Escape' -ne 'print uri_unescape $_'

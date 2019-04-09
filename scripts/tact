@@ -23,7 +23,14 @@ CONTACTS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/tact"
 mkdir -p "$CONTACTS_DIR"
 
 cmd-usage() {
-	1>&2 echo usage
+	1>&2 cat <<-EOF
+		Usage: tact [COMMAND] […]
+		COMMAND can be any of:
+		  list: shows the list of contacts
+		  add [NAME]: adds a contact
+		  edit [NAME]: edits a contact
+		  get [PATTERN]: shows the list of matching contacts
+	EOF
 }
 
 cmd-add() {
@@ -81,6 +88,11 @@ cmd-get() {
 
 main() {
 	cmd="$1"
+	if [[ -z "$cmd" ]]
+	then
+		cmd-usage
+		exit
+	fi
 	shift
 	case "$cmd" in
 		add)
